@@ -42,36 +42,37 @@ def register_bill(config):
 
 # parse arguments
 parser = argparse.ArgumentParser(description='Manage paper bills')
-parser.add_argument('--register',
+parser.add_argument('-register',
                     action='store_true',
                     help='register a bill')
-parser.add_argument('--init',
+parser.add_argument('-init',
                     action='store_true',
                     help='initialize the system')
-parser.add_argument('--list',
+parser.add_argument('-list',
                     action='store_true',
                     help='list all bills')
-parser.add_argument('--plot',
+parser.add_argument('-plot',
                     action='store_true',
                     help='plot monthly histogram of all bills')
-parser.add_argument('--deficit',
+parser.add_argument('-deficit',
                     type=str,
+                    dest='target',
                     action='store',
                     help='compute deficit given monthly spending target')
-parser.add_argument('--avg',
-                    action='store_true',
-                    help='average monthly spending')
-parser.add_argument('--from',
+parser.add_argument('-from',
                     nargs='?',
                     action='store',
                     dest='begin',
                     default=str(datetime.date.today() - datetime.timedelta(days=30)),
                     help='starting date, defaults to 30 days ago')
-parser.add_argument('--to',
+parser.add_argument('-to',
                     nargs='?',
                     action='store',
                     default=str(datetime.date.today()),
                     help='ending date, defaults to today')
+parser.add_argument('-dump',
+                    action='store',
+                    help='dump the database to a text file')
 args = parser.parse_args()
 
 # read configuration
@@ -185,7 +186,7 @@ elif args.plot:
 
     # close connection
     db.close()
-elif args.deficit:
+elif args.target:
     """
     Compute total deficit given monthly spending target.
     The target is the maximal amount of money we aim to spend per month.
@@ -194,7 +195,7 @@ elif args.deficit:
     """
 
     # get target
-    target = Decimal(args.deficit)
+    target = Decimal(args.target)
 
     # connect to db
     db = sqlite3.connect(config['DATABASE']['path'])
@@ -228,5 +229,20 @@ elif args.deficit:
 
     # close connection
     db.close()
+elif args.dump is not None:
+    print('[*] Dumping database to {}...'.format(args.dump))
+
+    # connect to db
+    db = sqlite3.connect(config['DATABASE']['path'])
+
+    # dump db
+    with open(args.dump, 'w') as f:
+        for line in db.iterdump():
+            f.write('{}\n'.format(line))
+
+    # close db
+    db.close()
+
+    print('[+] Done.')
 else:
     print('Unknown action. Please consult the help text using -h option.')
