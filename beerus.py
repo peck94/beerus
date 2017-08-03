@@ -63,12 +63,14 @@ parser.add_argument('--avg',
                     help='average monthly spending')
 parser.add_argument('--from',
                     nargs='?',
+                    action='store',
                     dest='begin',
-                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
+                    default=str(datetime.date.today() - datetime.timedelta(days=30)),
                     help='starting date, defaults to 30 days ago')
 parser.add_argument('--to',
                     nargs='?',
-                    const=str(datetime.date.today()),
+                    action='store',
+                    default=str(datetime.date.today()),
                     help='ending date, defaults to today')
 args = parser.parse_args()
 
