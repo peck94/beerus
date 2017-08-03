@@ -69,6 +69,11 @@ config = configparser.ConfigParser()
 config.read('beerus.conf')
 
 if args.init:
+    """
+    Initialize the system.
+    This involves creating and formatting the SQLite database which will store the bill data.
+    """
+
     print('[*] Setting up the system...')
 
     # check if database exists
@@ -99,8 +104,16 @@ if args.init:
 
     print('[+] Database initialized.')
 elif args.register:
+    """
+    Store new bill data.
+    """
     register_bill(config)
 elif args.list is not None:
+    """
+    List bills starting from a certain date.
+    Also list total amount of money spent.
+    """
+
     # get dates
     today = datetime.date.today()
     begin = args.list
@@ -124,6 +137,10 @@ elif args.list is not None:
     # close connection
     db.close()
 elif args.plot is not None:
+    """
+    Plot histograms of monthly bill totals starting from a given date.
+    """
+
     # get date
     begin = args.plot
 
@@ -155,6 +172,13 @@ elif args.plot is not None:
     # close connection
     db.close()
 elif args.deficit is not None:
+    """
+    Compute total deficit given monthly spending target.
+    The target is the maximal amount of money we aim to spend per month.
+    The deficit is the total amount we need to make up in order to achieve this goal.
+    You want the deficit to be at most zero.
+    """
+
     # get target
     target = Decimal(args.deficit)
 
@@ -179,7 +203,7 @@ elif args.deficit is not None:
             values[-1] += Decimal(amount)
 
     # compute deficits
-    deficits = [target - value for value in values]
+    deficits = [value - target for value in values]
     total = sum(deficits)
 
     # plot data
