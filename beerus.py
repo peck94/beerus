@@ -58,6 +58,10 @@ parser.add_argument('--plot',
                     nargs='?',
                     const=str(datetime.date.today() - datetime.timedelta(days=30)),
                     help='plot monthly histogram of all bills since given date (defaults to last 30 days)')
+parser.add_argument('--deficit',
+                    type=str,
+                    action='store',
+                    help='compute current deficit given monthly spending target')
 args = parser.parse_args()
 
 # read configuration
@@ -105,7 +109,7 @@ elif args.list is not None:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}"'.format(begin, today))
+    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(begin, today))
     print('Period of {} to {}'.format(begin, today))
     print('===================================================')
     print()
@@ -127,7 +131,7 @@ elif args.plot is not None:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills')
+    rows = db.execute('SELECT * FROM bills where date >= "{}" ORDER BY date ASC'.format(begin))
 
     # accumulate per month
     values = []
@@ -145,6 +149,42 @@ elif args.plot is not None:
 
     # plot data
     plt.bar(np.arange(len(months)), values)
+    plt.xticks(np.arange(len(months)), months)
+    plt.show()
+
+    # close connection
+    db.close()
+elif args.deficit is not None:
+    # get target
+    target = Decimal(args.deficit)
+
+    # connect to db
+    db = sqlite3.connect(config['DATABASE']['path'])
+
+    # query records
+    rows = db.execute('SELECT * FROM bills')
+
+    # accumulate per month
+    values = []
+    months = []
+    for row in rows:
+        _, amount, date = row
+        parts = date.split('-')
+        month = '{}-{}'.format(parts[0], parts[1])
+
+        if len(months) == 0 or months[-1] != month:
+            months.append(month)
+            values.append(Decimal(amount))
+        else:
+            values[-1] += Decimal(amount)
+
+    # compute deficits
+    deficits = [target - value for value in values]
+    total = sum(deficits)
+
+    # plot data
+    plt.title('Total deficit: {}'.format(total))
+    plt.bar(np.arange(len(months)), deficits)
     plt.xticks(np.arange(len(months)), months)
     plt.show()
 
