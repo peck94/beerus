@@ -47,7 +47,9 @@ parser.add_argument('--init',
                     action='store_true',
                     help='initialize the system')
 parser.add_argument('--list',
-                    action='store_true',
+                    type=str,
+                    nargs='?',
+                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
                     help='list all bills since given date (defaults to last 30 days)')
 args = parser.parse_args()
 
@@ -87,17 +89,17 @@ if args.init:
     print('[+] Database initialized.')
 elif args.register:
     register_bill(config)
-elif args.list:
-    # last 30 days
+elif args.list is not None:
+    # get dates
     today = datetime.date.today()
-    begin = today -  datetime.timedelta(days=30)
+    begin = args.list
 
     # connect to db
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
     rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}"'.format(begin, today))
-    print('Period of {} to {}'.format(today, begin))
+    print('Period of {} to {}'.format(begin, today))
     print('===================================================')
     print()
     total = 0
