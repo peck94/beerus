@@ -131,7 +131,6 @@ elif args.plot is not None:
     values = []
     months = []
     for row in rows:
-        print(row)
         _, amount, date = row
         parts = date.split('-')
         month = '{}-{}'.format(parts[0], parts[1])
@@ -143,8 +142,6 @@ elif args.plot is not None:
             values[-1] += amount
 
     # plot data
-    print(months)
-    print(values)
     plt.bar(np.arange(len(months)), values)
     plt.xticks(np.arange(len(months)), months)
     plt.show()
