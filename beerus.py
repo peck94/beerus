@@ -65,9 +65,9 @@ if args.init:
         if response != 'Y':
             print('Action aborted.')
             sys.exit(0)
-
-    # delete the database
-    os.unlink(config['DATABASE']['path'])
+        else:
+            # delete the database
+            os.unlink(config['DATABASE']['path'])
 
     # create database file
     file = open(config['DATABASE']['path'], 'w')
