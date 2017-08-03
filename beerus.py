@@ -49,19 +49,27 @@ parser.add_argument('--init',
                     action='store_true',
                     help='initialize the system')
 parser.add_argument('--list',
-                    type=str,
-                    nargs='?',
-                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
-                    help='list all bills since given date (defaults to last 30 days)')
+                    action='store_true',
+                    help='list all bills')
 parser.add_argument('--plot',
-                    type=str,
-                    nargs='?',
-                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
-                    help='plot monthly histogram of all bills since given date (defaults to last 30 days)')
+                    action='store_true',
+                    help='plot monthly histogram of all bills')
 parser.add_argument('--deficit',
                     type=str,
                     action='store',
-                    help='compute current deficit given monthly spending target')
+                    help='compute deficit given monthly spending target')
+parser.add_argument('--avg',
+                    action='store_true',
+                    help='average monthly spending')
+parser.add_argument('--from',
+                    nargs='?',
+                    dest='begin',
+                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
+                    help='starting date, defaults to 30 days ago')
+parser.add_argument('--to',
+                    nargs='?',
+                    const=str(datetime.date.today()),
+                    help='ending date, defaults to today')
 args = parser.parse_args()
 
 # read configuration
@@ -108,22 +116,18 @@ elif args.register:
     Store new bill data.
     """
     register_bill(config)
-elif args.list is not None:
+elif args.list:
     """
     List bills starting from a certain date.
     Also list total amount of money spent.
     """
 
-    # get dates
-    today = datetime.date.today()
-    begin = args.list
-
     # connect to db
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(begin, today))
-    print('Period of {} to {}'.format(begin, today))
+    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
+    print('Period of {} to {}'.format(args.begin, args.to))
     print('===================================================')
     print()
     total = Decimal(0)
@@ -136,19 +140,16 @@ elif args.list is not None:
 
     # close connection
     db.close()
-elif args.plot is not None:
+elif args.plot:
     """
     Plot histograms of monthly bill totals starting from a given date.
     """
-
-    # get date
-    begin = args.plot
 
     # connect to db
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills where date >= "{}" ORDER BY date ASC'.format(begin))
+    rows = db.execute('SELECT * FROM bills where date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
 
     # accumulate per month
     values = []
@@ -171,7 +172,7 @@ elif args.plot is not None:
 
     # close connection
     db.close()
-elif args.deficit is not None:
+elif args.deficit:
     """
     Compute total deficit given monthly spending target.
     The target is the maximal amount of money we aim to spend per month.
@@ -186,7 +187,7 @@ elif args.deficit is not None:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills')
+    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
 
     # accumulate per month
     values = []
