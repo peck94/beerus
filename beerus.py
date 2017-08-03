@@ -3,9 +3,10 @@ import argparse
 import sqlite3
 import configparser
 import datetime
-import os
+import matplotlib.pyplot as plt
 import os.path
 import sys
+import numpy as np
 
 
 def register_bill(config):
@@ -51,6 +52,10 @@ parser.add_argument('--list',
                     nargs='?',
                     const=str(datetime.date.today() - datetime.timedelta(days=30)),
                     help='list all bills since given date (defaults to last 30 days)')
+parser.add_argument('--plot',
+                    type=str,
+                    nargs='+',
+                    help='plot monthly histogram of all bills since given date')
 args = parser.parse_args()
 
 # read configuration
@@ -109,5 +114,42 @@ elif args.list is not None:
         total += amount
     print()
     print('Total amount: {}'.format(total))
+
+    # close connection
+    db.close()
+elif args.plot is not None:
+    # get date
+    begin = args.plot
+
+    # connect to db
+    db = sqlite3.connect(config['DATABASE']['path'])
+
+    # query records
+    rows = db.execute('SELECT * FROM bills')
+
+    # accumulate per month
+    values = []
+    months = []
+    for row in rows:
+        print(row)
+        _, amount, date = row
+        parts = date.split('-')
+        month = '{}-{}'.format(parts[0], parts[1])
+
+        if len(months) == 0 or months[-1] != month:
+            months.append(month)
+            values.append(amount)
+        else:
+            values[-1] += amount
+
+    # plot data
+    print(months)
+    print(values)
+    plt.bar(np.arange(len(months)), values)
+    plt.xticks(np.arange(len(months)), months)
+    plt.show()
+
+    # close connection
+    db.close()
 else:
     print('Unknown action. Please consult the help text using -h option.')
