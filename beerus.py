@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os.path
 import sys
 import numpy as np
+from decimal import Decimal
 
 
 def register_bill(config):
@@ -17,7 +18,7 @@ def register_bill(config):
     """
     # request information
     title = input('Title: ')
-    amount = float(input('Amount: '))
+    amount = input('Amount: ')
     time = input('Date (YYYY-MM-DD, defaults to today): ') or str(datetime.date.today())
     print()
 
@@ -54,8 +55,9 @@ parser.add_argument('--list',
                     help='list all bills since given date (defaults to last 30 days)')
 parser.add_argument('--plot',
                     type=str,
-                    nargs='+',
-                    help='plot monthly histogram of all bills since given date')
+                    nargs='?',
+                    const=str(datetime.date.today() - datetime.timedelta(days=30)),
+                    help='plot monthly histogram of all bills since given date (defaults to last 30 days)')
 args = parser.parse_args()
 
 # read configuration
@@ -85,7 +87,7 @@ if args.init:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # create table
-    db.execute('CREATE TABLE bills (title text, amount float, date text)')
+    db.execute('CREATE TABLE bills (title text, amount text, date text)')
 
     # commit and close
     db.commit()
@@ -107,11 +109,11 @@ elif args.list is not None:
     print('Period of {} to {}'.format(begin, today))
     print('===================================================')
     print()
-    total = 0
+    total = Decimal(0)
     for i, row in enumerate(rows):
         title, amount, _ = row
         print('[{}] {}: {}'.format(i+1, title, amount))
-        total += amount
+        total += Decimal(amount)
     print()
     print('Total amount: {}'.format(total))
 
@@ -137,9 +139,9 @@ elif args.plot is not None:
 
         if len(months) == 0 or months[-1] != month:
             months.append(month)
-            values.append(amount)
+            values.append(Decimal(amount))
         else:
-            values[-1] += amount
+            values[-1] += Decimal(amount)
 
     # plot data
     plt.bar(np.arange(len(months)), values)
