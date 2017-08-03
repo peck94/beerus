@@ -121,7 +121,7 @@ elif args.register:
 elif args.list:
     """
     List bills starting from a certain date.
-    Also list total amount of money spent.
+    Also list total amount of money spent as well as monthly average.
     """
 
     # connect to db
@@ -133,12 +133,23 @@ elif args.list:
     print('===================================================')
     print()
     total = Decimal(0)
+    month = None
+    months = []
     for i, row in enumerate(rows):
-        title, amount, _ = row
+        title, amount, date = row
         print('[{}] {}: {}'.format(i+1, title, amount))
         total += Decimal(amount)
+
+        parts = date.split('-')
+        m = '{}-{}'.format(parts[0], parts[1])
+        if month is None or month != m:
+            month = m
+            months.append(Decimal(amount))
+        else:
+            months[-1] += Decimal(amount)
     print()
     print('Total amount: {}'.format(total))
+    print('Monthly average: {}'.format(np.mean(months)))
 
     # close connection
     db.close()
