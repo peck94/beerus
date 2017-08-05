@@ -10,41 +10,14 @@ import numpy as np
 from decimal import Decimal
 
 
-def register_bill(config):
-    """
-    Register a new bill.
-    :param config: The configuration to work with
-    :return: Nothing.
-    """
-    # request information
-    title = input('Title: ')
-    amount = input('Amount: ')
-    time = input('Date (YYYY-MM-DD, defaults to today): ') or str(datetime.date.today())
-    print()
-
-    # verify information
-    print('Registering "{}", amount {}, on {}.'.format(title, amount, time))
-    response = input('OK? [Y/n] ')
-
-    if response == 'Y':
-        # connect to the database
-        db = sqlite3.connect(config['DATABASE']['path'])
-
-        # insert the data
-        db.execute('INSERT INTO bills (title,amount,date) VALUES ("{}","{}","{}")'.format(title, amount, time))
-
-        # commit the transaction and close it
-        db.commit()
-        db.close()
-    else:
-        print('Registration aborted.')
-
-
 # parse arguments
 parser = argparse.ArgumentParser(description='Manage paper bills')
 parser.add_argument('-register',
                     action='store_true',
                     help='register a bill')
+parser.add_argument('-delete',
+                    action='store_true',
+                    help='delete a bill')
 parser.add_argument('-init',
                     action='store_true',
                     help='initialize the system')
@@ -118,7 +91,59 @@ elif args.register:
     """
     Store new bill data.
     """
-    register_bill(config)
+    # request information
+    title = input('Title: ')
+    amount = input('Amount: ')
+    time = input('Date (YYYY-MM-DD, defaults to today): ') or str(datetime.date.today())
+    print()
+
+    # verify information
+    print('Registering "{}", amount {}, on {}.'.format(title, amount, time))
+    response = input('OK? [Y/n] ')
+
+    if response == 'Y':
+        # connect to the database
+        db = sqlite3.connect(config['DATABASE']['path'])
+
+        # insert the data
+        db.execute('INSERT INTO bills (title,amount,date) VALUES (?, ?, ?)', (title, amount, time))
+
+        # commit the transaction and close it
+        db.commit()
+        db.close()
+
+        print('Registration completed.')
+    else:
+        print('Registration aborted.')
+elif args.delete:
+    """
+    Delete a bill from the database.
+    """
+    # request information
+    title = input('Title: ')
+    amount = input('Amount: ')
+    time = input('Date (YYYY-MM-DD, defaults to today): ') or str(datetime.date.today())
+    print()
+
+    # verify information
+    print('Deleting "{}", amount {}, on {}.'.format(title, amount, time))
+    response = input('OK? [Y/n] ')
+
+    if response == 'Y':
+        # connect to the database
+        db = sqlite3.connect(config['DATABASE']['path'])
+
+        # delete the data
+        db.execute('DELETE FROM bills WHERE title = ? AND amount = ? AND date = ?', (title, amount, time))
+
+        # commit and close
+        db.commit()
+        db.close()
+
+        print('Data deleted.')
+    else:
+        print('Deletion aborted.')
+
 elif args.list:
     """
     List bills starting from a certain date.
@@ -129,7 +154,7 @@ elif args.list:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
+    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN ? AND ? ORDER BY date ASC', (args.begin, args.to))
     print('Period of {} to {}'.format(args.begin, args.to))
     print('===================================================')
     print()
@@ -138,7 +163,7 @@ elif args.list:
     months = []
     for i, row in enumerate(rows):
         title, amount, date = row
-        print('[{}] {}: {}'.format(i+1, title, amount))
+        print('[{}] {}: {} on {}'.format(i+1, title, amount, date))
         total += Decimal(amount)
 
         parts = date.split('-')
@@ -163,7 +188,7 @@ elif args.plot:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills where date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
+    rows = db.execute('SELECT * FROM bills where date BETWEEN ? AND ? ORDER BY date ASC', (args.begin, args.to))
 
     # accumulate per month
     values = []
@@ -180,6 +205,7 @@ elif args.plot:
             values[-1] += Decimal(amount)
 
     # plot data
+    plt.title('From {} to {}'.format(args.begin, args.to))
     plt.bar(np.arange(len(months)), values)
     plt.xticks(np.arange(len(months)), months)
     plt.show()
@@ -201,7 +227,7 @@ elif args.target:
     db = sqlite3.connect(config['DATABASE']['path'])
 
     # query records
-    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN "{}" AND "{}" ORDER BY date ASC'.format(args.begin, args.to))
+    rows = db.execute('SELECT * FROM bills WHERE date BETWEEN ? AND ? ORDER BY date ASC', (args.begin, args.to))
 
     # accumulate per month
     values = []
