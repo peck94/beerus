@@ -91,6 +91,9 @@ elif args.register:
     """
     Store new bill data.
     """
+    print('Registering new bill')
+    print('============================')
+
     # request information
     title = input('Title: ')
     amount = input('Amount: ')
@@ -119,6 +122,9 @@ elif args.delete:
     """
     Delete a bill from the database.
     """
+    print('Deleting existing bill')
+    print('============================')
+
     # request information
     title = input('Title: ')
     amount = input('Amount: ')
