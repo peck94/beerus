@@ -185,7 +185,15 @@ elif args.list:
             months[-1] += Decimal(amount)
     print('===================================================')
     print('Total amount: {}'.format(total))
-    print('Monthly average: {}'.format(np.mean(months)))
+
+    if len(months) >= 1:
+        print('Monthly statistics:')
+        stat_format = '\t{:<10}{:<10}'
+        print(stat_format.format('Average', np.mean(months)))
+        print(stat_format.format('Median', np.median(months)))
+        print(stat_format.format('Std', np.std(months)))
+        print(stat_format.format('Min', np.min(months)))
+        print(stat_format.format('Max', np.max(months)))
 
     # close connection
     db.close()
