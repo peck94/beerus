@@ -186,14 +186,21 @@ elif args.list:
     print('===================================================')
     print('Total amount: {}'.format(total))
 
+    stat_format = '\t{:<10}{:<10}'
     if len(months) >= 1:
         print('Monthly statistics:')
-        stat_format = '\t{:<10}{:<10}'
         print(stat_format.format('Average', np.mean(months)))
         print(stat_format.format('Median', np.median(months)))
         print(stat_format.format('Std', np.std(months)))
         print(stat_format.format('Min', np.min(months)))
         print(stat_format.format('Max', np.max(months)))
+    else:
+        print('Insufficient data for monthly statistics.')
+    if len(months) >= 2:
+        p = np.polyfit(np.arange(len(months)), [float(m) for m in months], deg=1)
+        print(stat_format.format('Trend', p[0]))
+    else:
+        print('Insufficient data for trend analysis.')
 
     # close connection
     db.close()
