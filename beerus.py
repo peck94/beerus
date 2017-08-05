@@ -46,6 +46,9 @@ parser.add_argument('-to',
 parser.add_argument('-dump',
                     action='store',
                     help='dump the database to a text file')
+parser.add_argument('-load',
+                    action='store',
+                    help='load database dump from file')
 args = parser.parse_args()
 
 # read configuration
@@ -58,7 +61,7 @@ if args.init:
     This involves creating and formatting the SQLite database which will store the bill data.
     """
 
-    print('[*] Setting up the system...')
+    print('Setting up the system...')
 
     # check if database exists
     if os.path.isfile(config['DATABASE']['path']):
@@ -74,7 +77,7 @@ if args.init:
     # create database file
     file = open(config['DATABASE']['path'], 'w')
     file.close()
-    print('[+] Created SQLite database file.')
+    print('Created SQLite database file.')
 
     # connect to the database
     db = sqlite3.connect(config['DATABASE']['path'])
@@ -86,7 +89,7 @@ if args.init:
     db.commit()
     db.close()
 
-    print('[+] Database initialized.')
+    print('Database initialized.')
 elif args.register:
     """
     Store new bill data.
@@ -263,7 +266,15 @@ elif args.target:
     # close connection
     db.close()
 elif args.dump is not None:
-    print('[*] Dumping database to {}...'.format(args.dump))
+    print('Dumping database to {}...'.format(args.dump))
+
+    # check if file already exists
+    if os.path.isfile(args.dump):
+        print('Warning: file already exists.')
+        response = input('Overwrite? [Y/n] ')
+        if response != 'Y':
+            print('Dump aborted.')
+            sys.exit(0)
 
     # connect to db
     db = sqlite3.connect(config['DATABASE']['path'])
@@ -276,6 +287,28 @@ elif args.dump is not None:
     # close db
     db.close()
 
-    print('[+] Done.')
+    print('Done.')
+elif args.load is not None:
+    print('Loading file {}...'.format(args.load))
+
+    # load file SQL
+    with open(args.load, 'r') as f:
+        sql = f.read()
+
+    # check if database file exists
+    if not os.path.isfile(config['DATABASE']['path']):
+        f = open(config['DATABASE']['path'], 'w')
+        f.close()
+
+    # connect to database
+    db = sqlite3.connect(config['DATABASE']['path'])
+
+    # execute the script
+    db.executescript(sql)
+
+    # close the connection
+    db.close()
+
+    print('Done.')
 else:
     print('Unknown action. Please consult the help text using -h option.')
