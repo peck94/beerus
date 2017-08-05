@@ -155,15 +155,16 @@ elif args.list:
 
     # query records
     rows = db.execute('SELECT * FROM bills WHERE date BETWEEN ? AND ? ORDER BY date ASC', (args.begin, args.to))
+    row_format = '{:<5}{:<15}{:<15}{:<15}'
     print('Period of {} to {}'.format(args.begin, args.to))
     print('===================================================')
-    print()
+    print(row_format.format('No.', 'Title', 'Amount', 'Date'))
     total = Decimal(0)
     month = None
     months = []
     for i, row in enumerate(rows):
         title, amount, date = row
-        print('[{}] {}: {} on {}'.format(i+1, title, amount, date))
+        print(row_format.format(i+1, title, amount, date))
         total += Decimal(amount)
 
         parts = date.split('-')
@@ -173,7 +174,7 @@ elif args.list:
             months.append(Decimal(amount))
         else:
             months[-1] += Decimal(amount)
-    print()
+    print('===================================================')
     print('Total amount: {}'.format(total))
     print('Monthly average: {}'.format(np.mean(months)))
 
