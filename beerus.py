@@ -152,7 +152,6 @@ elif args.delete:
         print('Data deleted.')
     else:
         print('Deletion aborted.')
-
 elif args.list:
     """
     List bills starting from a certain date.
