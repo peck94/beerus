@@ -49,6 +49,9 @@ parser.add_argument('-dump',
 parser.add_argument('-load',
                     action='store',
                     help='load database dump from file')
+parser.add_argument('-search',
+                    action='store',
+                    help='search the database for a bill')
 args = parser.parse_args()
 
 # read configuration
@@ -324,5 +327,29 @@ elif args.load is not None:
     db.close()
 
     print('Done.')
+elif args.search is not None:
+    print('Query: {}'.format(args.search))
+
+    # connect to db
+    db = sqlite3.connect(config['DATABASE']['path'])
+
+    # query records
+    rows = db.execute('SELECT * FROM bills WHERE title LIKE ? AND date BETWEEN ? AND ? ORDER BY date ASC', (args.search, args.begin, args.to))
+
+    # print results
+    row_format = '{:<5}{:<15}{:<15}{:<15}'
+    print('Period of {} to {}'.format(args.begin, args.to))
+    print('===================================================')
+    print(row_format.format('No.', 'Title', 'Amount', 'Date'))
+    total = Decimal(0)
+    for i, row in enumerate(rows):
+        title, amount, date = row
+        print(row_format.format(i+1, title, amount, date))
+        total += Decimal(amount)
+    print('===================================================')
+    print('Total: {}'.format(total))
+
+    # close connection
+    db.close()
 else:
     print('Unknown action. Please consult the help text using -h option.')
